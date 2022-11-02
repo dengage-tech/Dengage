@@ -1,0 +1,11 @@
+framework module Dengage {
+  umbrella header "Dengage.h"
+
+  export *
+  module * { export * }
+}
+
+module Dengage.Swift {
+  header "Dengage-Swift.h"
+  requires objc
+}
