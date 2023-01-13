@@ -21,15 +21,24 @@ final class DengageConfiguration:Encodable {
     let userAgent: String
     var permission: Bool
     let dengageDeviceIdApiUrl: URL
+    var partnerDeviceId: String?
 
     var inboxLastFetchedDate: Date?
+    var realTimeCategoryPath: String?
+    var realTimeCartItemCount: String?
+    var realTimeCartAmount: String?
+    var city: String?
+    var state: String?
+    var pageViewCount = 0
+    let inAppURL: URL
+
     
     init(integrationKey: String, options: DengageOptions) {
         subscriptionURL = DengageConfiguration.getSubscriptionURL()
         eventURL = DengageConfiguration.getEventUrl()
         deviceCountryCode = DengageConfiguration.getDeviceCountry()
         deviceLanguage = Locale.current.languageCode ?? "Null"
-        deviceTimeZone = TimeZone.current.identifier
+        deviceTimeZone = TimeZone.current.identifier 
         appVersion = DengageConfiguration.getAppVersion()
         applicationIdentifier = DengageConfiguration.getApplicationId()
         advertisingIdentifier = DengageConfiguration.getAdvertisingId()
@@ -40,6 +49,8 @@ final class DengageConfiguration:Encodable {
         self.userAgent = UserAgentUtils.userAgent
         self.permission = DengageConfiguration.getPermission()
         self.deviceToken = DengageConfiguration.getToken()
+        inAppURL = DengageConfiguration.getInAppURL()
+
         dengageDeviceIdApiUrl = DengageConfiguration.dengageDeviceIdApiUrl()
 
     }
@@ -62,6 +73,11 @@ final class DengageConfiguration:Encodable {
     var remoteConfiguration: GetSDKParamsResponse? {
         return DengageLocalStorage.shared.getConfig()
     }
+    
+    var realTimeInAppMessageLastFetchedTime:Double? {
+          return (DengageLocalStorage.shared.value(for: .lastFetchedRealTimeInAppMessageTime) as? Double)
+      }
+
     
     var inAppMessageLastFetchedTime:Double? {
         return (DengageLocalStorage.shared.value(for: .lastFetchedInAppMessageTime) as? Double)
@@ -90,6 +106,71 @@ final class DengageConfiguration:Encodable {
     func set(permission: Bool){
         self.permission = permission
         DengageLocalStorage.shared.set(value: permission, for: .userPermission)
+    }
+    
+    func setPartnerDeviceId(adid: String?){
+        DengageLocalStorage.shared.set(value: adid, for: .PartnerDeviceId)
+        partnerDeviceId = adid
+    }
+    
+    func setinAppLinkConfiguration(openInAppBrowser : Bool,  retrieveLinkOnSameScreen : Bool , deeplink : String){
+
+        DengageLocalStorage.shared.set(value: openInAppBrowser, for: .openInAppBrowser)
+        DengageLocalStorage.shared.set(value: retrieveLinkOnSameScreen, for: .retrieveLinkOnSameScreen)
+        DengageLocalStorage.shared.set(value: deeplink, for: .deeplink)
+
+    }
+    
+    func getOpenInAppBrowser()-> Bool
+    {
+        return DengageLocalStorage.shared.value(for: .openInAppBrowser) as? Bool ?? false
+
+    }
+    
+    func getRetrieveLinkOnSameScreen()-> Bool
+    {
+        return DengageLocalStorage.shared.value(for: .retrieveLinkOnSameScreen) as? Bool ?? false
+
+    }
+    
+    func getDeeplink()-> String
+    {
+        return DengageLocalStorage.shared.value(for: .deeplink) as? String ?? ""
+
+    }
+    
+    func getPartnerDeviceID()-> String?
+    {
+        return DengageLocalStorage.shared.value(for: .PartnerDeviceId) as? String
+
+    }
+    
+    func setCategory(path: String?) {
+        realTimeCategoryPath = path
+    }
+    
+    func setCart(itemCount: String?) {
+        realTimeCartItemCount = itemCount
+    }
+    
+    func setCart(amount: String?) {
+        realTimeCartAmount = amount
+    }
+    
+    func setState(name: String?) {
+        state = name
+    }
+    
+    func setCity(name: String?) {
+        city = name
+    }
+    
+    func incrementPageViewCount(){
+        pageViewCount += 1
+    }
+    
+    func resetPageViewCount(){
+        pageViewCount = 0
     }
     
     func getContactKey() -> String? {
@@ -128,6 +209,18 @@ final class DengageConfiguration:Encodable {
         return apiURL
     }
     
+    private static func getInAppURL() -> URL {
+            guard let apiURLString = Bundle.main.object(forInfoDictionaryKey: "DengageInAppApiUrl") as? String else {
+                return getSubscriptionURL()
+            }
+
+            guard let apiURL = URL(string: apiURLString) else {
+                return getSubscriptionURL()
+            }
+
+            return apiURL
+        }
+    
     private static func getDeviceCountry() -> String {
         guard let regionCode = Locale.current.regionCode else { return "Null" }
         let countryId = Locale.identifier(fromComponents: [NSLocale.Key.countryCode.rawValue: regionCode])
@@ -137,15 +230,17 @@ final class DengageConfiguration:Encodable {
     }
     
     private static func dengageDeviceIdApiUrl() -> URL {
-        guard let apiURLString = Bundle.main.object(forInfoDictionaryKey: "DengageDeviceIdApiUrl") as? String else {
-            fatalError("[DENGAGE] 'DengageDeviceIdApiUrl' not found on plist file")
-        }
         
-        guard let apiURL = URL(string: apiURLString) else {
-            fatalError("[DENGAGE] 'DengageDeviceIdApiUrl' not correct on plist file")
+        guard let apiURLString = Bundle.main.object(forInfoDictionaryKey: "DengageDeviceIdApiUrl") as? String else {
+            return getSubscriptionURL()
         }
- 
+
+        guard let apiURL = URL(string: apiURLString) else {
+            return getSubscriptionURL()
+        }
+
         return apiURL
+     
     }
     
     private static func getAppVersion() -> String {

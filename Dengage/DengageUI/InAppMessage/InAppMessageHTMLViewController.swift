@@ -11,7 +11,7 @@ final class InAppMessageHTMLViewController: UIViewController{
     var delegate: InAppMessagesActionsDelegate?
 
     let message:InAppMessage
-    
+
     var hasTopNotch: Bool {
         if #available(iOS 11.0, tvOS 11.0, *) {
             return UIApplication.shared.delegate?.window??.safeAreaInsets.top ?? 0 > 20
@@ -135,10 +135,10 @@ extension InAppMessageHTMLViewController: WKScriptMessageHandler {
         switch message.name {
         case "sendClick":
             let buttonId = message.body as? String
-            self.delegate?.sendClickEvent(messageId: self.message.data.messageDetails,
+            self.delegate?.sendClickEvent(message: self.message,
                                           buttonId: buttonId)
         case "iosUrl":
-            
+             
             if message.body as? String == "Dn.promptPushPermission()"
             {
                 delegate?.promptPushPermission()
@@ -158,7 +158,7 @@ extension InAppMessageHTMLViewController: WKScriptMessageHandler {
         case "promptPushPermission":
             delegate?.promptPushPermission()
         case "dismiss":
-            delegate?.sendDissmissEvent(messageId: self.message.data.messageDetails)
+            delegate?.sendDissmissEvent(message: self.message)
         case "close":
             delegate?.close()
         default:
