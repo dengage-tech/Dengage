@@ -25,7 +25,7 @@ final class DengageInAppMessageManager:DengageInAppMessageManagerInterface {
 extension DengageInAppMessageManager{
     func fetchInAppMessages(){
         fetchRealTimeMessages()
-        getVisitorInfo()
+        //getVisitorInfo()
         Logger.log(message: "fetchInAppMessages called")
         guard shouldFetchInAppMessages else {return}
         guard let remoteConfig = config.remoteConfiguration, let accountName = remoteConfig.accountName else { return }
