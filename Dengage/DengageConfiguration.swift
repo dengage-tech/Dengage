@@ -98,9 +98,18 @@ final class DengageConfiguration:Encodable {
     }
     
     func set(deviceId: String){
-        DengageLocalStorage.shared.set(value: deviceId, for: .applicationIdentifier)
-        DengageKeychain.set(deviceId, forKey: .applicationIdentifier)
-        applicationIdentifier = deviceId
+        
+        DengageKeychain.set(deviceId, forKey: "\(Bundle.main.bundleIdentifier ?? "DengageApplicationIdentifier")")
+        let previous = self.applicationIdentifier
+        
+        if previous != deviceId {
+            
+           applicationIdentifier = deviceId
+           Dengage.syncSubscription()
+            
+        }
+        
+        
     }
     
     func set(permission: Bool){
@@ -109,14 +118,30 @@ final class DengageConfiguration:Encodable {
     }
     
     func setPartnerDeviceId(adid: String?){
-        DengageLocalStorage.shared.set(value: adid, for: .PartnerDeviceId)
-        partnerDeviceId = adid
+        
+        if let partnerId = DengageLocalStorage.shared.value(for: .PartnerDeviceId) as? String
+        {
+            if partnerId != adid
+            {
+                DengageLocalStorage.shared.set(value: adid, for: .PartnerDeviceId)
+                partnerDeviceId = adid
+                Dengage.syncSubscription()
+
+            }
+        }
+        else
+        {
+            DengageLocalStorage.shared.set(value: adid, for: .PartnerDeviceId)
+            partnerDeviceId = adid
+            Dengage.syncSubscription()
+            
+        }
+
+        
     }
     
-    func setinAppLinkConfiguration(openInAppBrowser : Bool,  retrieveLinkOnSameScreen : Bool , deeplink : String){
+    func setinAppLinkConfiguration(deeplink : String){
 
-        DengageLocalStorage.shared.set(value: openInAppBrowser, for: .openInAppBrowser)
-        DengageLocalStorage.shared.set(value: retrieveLinkOnSameScreen, for: .retrieveLinkOnSameScreen)
         DengageLocalStorage.shared.set(value: deeplink, for: .deeplink)
 
     }
@@ -249,16 +274,21 @@ final class DengageConfiguration:Encodable {
     }
     
     static func getApplicationId() -> String {
-        if let uuidString = DengageLocalStorage.shared.value(for: .applicationIdentifier) as? String, !uuidString.isEmpty {
-            DengageKeychain.set(uuidString, forKey: .applicationIdentifier)
-            return uuidString
-        } else if let uuidString = DengageKeychain.string(forKey: .applicationIdentifier), !uuidString.isEmpty {
-            DengageLocalStorage.shared.set(value: uuidString, for: .applicationIdentifier)
+        
+        let appBundleID = Bundle.main.bundleIdentifier ?? "DengageApplicationIdentifier"
+        
+        if let uuidString = DengageKeychain.string(forKey: "DengageApplicationIdentifier"), !uuidString.isEmpty {
+            
+            DengageKeychain.remove("DengageApplicationIdentifier")
+            DengageKeychain.set(uuidString, forKey: appBundleID)
+            
+        }
+        
+        if let uuidString = DengageKeychain.string(forKey: appBundleID), !uuidString.isEmpty {
             return uuidString
         } else {
             let uuidString = NSUUID().uuidString.lowercased()
-            DengageLocalStorage.shared.set(value: uuidString, for: .applicationIdentifier)
-            DengageKeychain.set(uuidString, forKey: .applicationIdentifier)
+            DengageKeychain.set(uuidString, forKey: appBundleID)
             return uuidString
         }
     }

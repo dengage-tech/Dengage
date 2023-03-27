@@ -9,8 +9,11 @@ final class InAppMessageHTMLViewController: UIViewController{
     }()
 
     var delegate: InAppMessagesActionsDelegate?
+    
 
     let message:InAppMessage
+    
+    var isIosURLNPresent = false
 
     var hasTopNotch: Bool {
         if #available(iOS 11.0, tvOS 11.0, *) {
@@ -38,6 +41,12 @@ final class InAppMessageHTMLViewController: UIViewController{
         super.viewDidLoad()
         setupJavascript()
         viewSource.setupConstaints(for: message.data.content.props)
+        
+        if let isPresent = message.data.content.props.html?.contains("Dn.iosUrlN") {
+            
+            self.isIosURLNPresent = isPresent
+        }
+        
         let tapGesture = UITapGestureRecognizer(target: self, action: #selector(self.didTapView(sender:)))
         self.view.addGestureRecognizer(tapGesture)
     }
@@ -53,10 +62,12 @@ final class InAppMessageHTMLViewController: UIViewController{
      }
     
     private func setupJavascript(){
+        
         let userScript = WKUserScript(source: javascriptInterface,
                                       injectionTime: WKUserScriptInjectionTime.atDocumentEnd,
                                       forMainFrameOnly: true)
         viewSource.webView.configuration.userContentController.addUserScript(userScript)
+        
         if #available(iOS 14.0, *) {
             viewSource.webView.configuration.defaultWebpagePreferences.allowsContentJavaScript = true
         } else {
@@ -65,7 +76,9 @@ final class InAppMessageHTMLViewController: UIViewController{
 
         viewSource.webView.configuration.userContentController.add(self, name: "dismiss")
         viewSource.webView.configuration.userContentController.add(self, name: "close")
+        viewSource.webView.configuration.userContentController.add(self, name: "closeN")
         viewSource.webView.configuration.userContentController.add(self, name: "iosUrl")
+        viewSource.webView.configuration.userContentController.add(self, name: "iosUrlN")
         viewSource.webView.configuration.userContentController.add(self, name: "sendClick")
         viewSource.webView.configuration.userContentController.add(self, name: "promptPushPermission")
         viewSource.webView.configuration.userContentController.add(self, name: "setTags")
@@ -132,25 +145,73 @@ extension InAppMessageHTMLViewController: WKScriptMessageHandler {
     }
     
     private func run(message: WKScriptMessage){
+        
         switch message.name {
+            
         case "sendClick":
             let buttonId = message.body as? String
             self.delegate?.sendClickEvent(message: self.message,
                                           buttonId: buttonId)
+            
+
         case "iosUrl":
              
-            if message.body as? String == "Dn.promptPushPermission()"
+            if !isIosURLNPresent
             {
-                delegate?.promptPushPermission()
+                if message.body as? String == "Dn.promptPushPermission()"
+                {
+                    delegate?.promptPushPermission()
+
+                }
+                else
+                {
+                    guard let url = message.body as? String else {return}
+                    print("WKScriptMessage In app message \(url)")
+                    self.delegate?.open(url: url)
+                }
+                
+            }
+            
+            
+        case "iosUrlN":
+            
+            print("WKScriptMessage In app message \(message.body)")
+            guard let dict = message.body as? [String:Any] else {return}
+            
+            if let openInAppBrowser = dict["openInAppBrowser"] as? Bool
+            {
+                DengageLocalStorage.shared.set(value: openInAppBrowser, for: .openInAppBrowser)
 
             }
             else
             {
-                guard let url = message.body as? String else {return}
-                print("WKScriptMessage In app message \(url)")
-                self.delegate?.open(url: url)
+                DengageLocalStorage.shared.set(value: false, for: .openInAppBrowser)
+
             }
-          
+            if let retrieveLinkOnSameScreen = dict["retrieveLinkOnSameScreen"] as? Bool
+            {
+                DengageLocalStorage.shared.set(value: retrieveLinkOnSameScreen, for: .retrieveLinkOnSameScreen)
+
+            }
+            else
+            {
+                DengageLocalStorage.shared.set(value: false, for: .retrieveLinkOnSameScreen)
+            }
+                        
+            if let deeplink = dict["deeplink"] as? String
+            {
+                if deeplink == "Dn.promptPushPermission()"
+                {
+                    delegate?.promptPushPermission()
+
+                }
+                else
+                {
+                    
+                    self.delegate?.open(url: deeplink)
+                }
+
+            }
         case "setTags":
             guard let tagItemData = message.body as? [Dictionary<String,String>] else {return}
             let tagItems = tagItemData.map{TagItem.init(with: $0)}
@@ -160,21 +221,38 @@ extension InAppMessageHTMLViewController: WKScriptMessageHandler {
         case "dismiss":
             delegate?.sendDissmissEvent(message: self.message)
         case "close":
+            
+            if !isIosURLNPresent
+            {
+                delegate?.close()
+
+            }
+            
+        case "closeN":
+            
             delegate?.close()
+
         default:
             break
         }
+        
+        
     }
 }
 
 extension InAppMessageHTMLViewController{
     fileprivate var javascriptInterface:String{
         return """
-        var Dn = {
+        var Dn =  {
             iosUrl: (url) => {
                 window.webkit.messageHandlers.iosUrl.postMessage(url);
             },
+            iosUrlN:(url,inbr,ret) => {
+        
+                window.webkit.messageHandlers.iosUrlN.postMessage({deeplink : url,openInAppBrowser : inbr,retrieveLinkOnSameScreen : ret});
+            },
             androidUrl: (url) => {},
+            androidUrlN: (url,inbr,ret) => {},
             sendClick: (eventName) => {
                 window.webkit.messageHandlers.sendClick.postMessage(eventName);
             },
@@ -183,6 +261,9 @@ extension InAppMessageHTMLViewController{
             },
             close: () => {
                 window.webkit.messageHandlers.close.postMessage(null);
+            },
+            closeN: () => {
+                window.webkit.messageHandlers.closeN.postMessage(null);
             },
             setTags: (tags) => {
                 window.webkit.messageHandlers.setTags.postMessage(tags);

@@ -1,7 +1,8 @@
 import Foundation
 import UIKit
 
-public class Dengage{
+public class Dengage  {
+    
     static var manager: DengageManager?
     
     static var dengage: DengageManager? {
@@ -59,6 +60,13 @@ public class Dengage{
     
     @objc public static func set(deviceId: String) {
         dengage?.config.set(deviceId: deviceId)
+        
+    }
+    
+    @objc public static func syncSDK() {
+       
+        dengage?.sync()
+        
     }
     
     @objc public static func set(permission: Bool){
@@ -85,6 +93,14 @@ public class Dengage{
     
     @objc public static func getDeviceToken() -> String? {
         dengage?.config.deviceToken
+    }
+    
+    @objc public static func getLastPushPayload() -> String? {
+        
+        let pushPayload = DengageLocalStorage.shared.value(for: .lastPushPayload) as? String
+        DengageLocalStorage.shared.set(value: "", for: .lastPushPayload)
+        return pushPayload
+        
     }
     
     @objc public static func setToken(token: String) {
@@ -144,14 +160,7 @@ public class Dengage{
         dengage?.inAppManager.setNavigation(screenName:screenName)
     }
     
-    @objc public static func handleInAppDeeplink(completion: @escaping (String) -> Void) {
-        
-        dengage?.inAppManager.handleInAppDeeplink(completion: { url in
-            
-            completion(url)
-            
-        })
-    }
+    
     
     @objc public static func showRealTimeInApp(
         screenName: String? = nil,
@@ -182,14 +191,12 @@ public class Dengage{
     
     @objc public static func setPartnerDeviceId(adid: String?) {
        
-        DengageLocalStorage.shared.set(value: adid, for: .PartnerDeviceId)
-
         dengage?.config.setPartnerDeviceId(adid: adid)
     }
     
-    @objc public static func inAppLinkConfiguration(openInAppBrowser : Bool,  retrieveLinkOnSameScreen : Bool , deeplink : String)
+    @objc public static func inAppLinkConfiguration(deeplink : String)
     {
-        dengage?.config.setinAppLinkConfiguration(openInAppBrowser: openInAppBrowser, retrieveLinkOnSameScreen: retrieveLinkOnSameScreen, deeplink: deeplink)
+        dengage?.config.setinAppLinkConfiguration(deeplink: deeplink)
 
     }
     
@@ -274,8 +281,8 @@ public class Dengage{
         Logger.isEnabled = isVisible
     }
     
-    static func syncSubscription() {
-        dengage?.sync()
+   static func syncSubscription() {
+        dengage?.makeSubscriptionRequestAPICall()
     }
 }
 
@@ -345,6 +352,18 @@ extension Dengage{
         dengage?.dengageDeviceIdSendToServer(token: token)
     }
     
-    
+    @objc public static func handleInAppDeeplink(completion: @escaping (String) -> Void) {
+        
+        dengage?.inAppManager.returnAfterDeeplinkRecieved = { deeplink in
+            
+            completion(deeplink)
+            
+        }
+        
+        
+     
+    }
     
 }
+
+
