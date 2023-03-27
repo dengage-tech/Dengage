@@ -12,7 +12,7 @@ public class DengageManager {
     var eventManager: DengageEventProtocolInterface
     var sessionManager: DengageSessionManagerInterface
     var inboxManager: DengageInboxManagerInterface
-    var inAppManager: DengageInAppMessageManagerInterface
+    var inAppManager: DengageInAppMessageManager
     var notificationManager: DengageNotificationManagerInterface
     var dengageRFMManager: DengageRFMManager
 
@@ -83,7 +83,7 @@ extension DengageManager {
         let previous = self.config.applicationIdentifier
         if previous != deviceId {
             self.config.set(deviceId: deviceId)
-            Dengage.syncSubscription()
+           Dengage.syncSubscription()
         }
     }
     
@@ -96,6 +96,130 @@ extension DengageManager {
     }
     
     func sync(){
+            
+        let integrationKeySubscription = DengageLocalStorage.shared.value(for: .integrationKeySubscription) as? String
+        let tokenSubscription = DengageLocalStorage.shared.value(for: .tokenSubscription) as? String
+        let contactKeySubscription = DengageLocalStorage.shared.value(for: .contactKeySubscription) as? String
+        let permissionSubscription = DengageLocalStorage.shared.value(for: .permissionSubscription) as? Bool
+        let udidSubscription = DengageLocalStorage.shared.value(for: .udidSubscription) as? String
+        let carrierIdSubscription = DengageLocalStorage.shared.value(for: .carrierIdSubscription) as? String
+        let appVersionSubscription = DengageLocalStorage.shared.value(for: .appVersionSubscription) as? String
+        let sdkVersionSubscription = DengageLocalStorage.shared.value(for: .sdkVersionSubscription) as? String
+        let countrySubscription = DengageLocalStorage.shared.value(for: .countrySubscription) as? String
+        let languageSubscription = DengageLocalStorage.shared.value(for: .languageSubscription) as? String
+        let timezoneSubscription = DengageLocalStorage.shared.value(for: .timezoneSubscription) as? String
+        let partner_device_idSubscription = DengageLocalStorage.shared.value(for: .partner_device_idSubscription) as? String
+        let advertisingIdSubscription = DengageLocalStorage.shared.value(for: .advertisingIdSubscription) as? String
+        
+        let integrationKey = self.config.integrationKey
+        let token = self.config.deviceToken
+        let contactKey = self.config.getContactKey()
+        let userPermission = self.config.permission
+        let udid = self.config.applicationIdentifier
+        let carrierId = self.config.getCarrierIdentifier
+        let appVersion = self.config.appVersion
+        let sdkVersion = SDK_VERSION
+        let country = self.config.deviceCountryCode
+        let language = self.config.deviceLanguage
+        let timezone = self.config.deviceTimeZone
+        var PartnerDeviceId = ""
+        
+        if let partnerId = DengageLocalStorage.shared.value(for: .PartnerDeviceId) as? String
+        {
+            PartnerDeviceId = partnerId
+        }
+        let advertisingId = self.config.advertisingIdentifier
+        
+        if (integrationKeySubscription != nil) && (integrationKeySubscription != integrationKey)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (tokenSubscription != nil) && (token != tokenSubscription)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (contactKey != nil) &&  (contactKey != contactKeySubscription)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (permissionSubscription != nil) &&  (userPermission != permissionSubscription)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (udidSubscription != nil) &&  (udidSubscription != udid)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (carrierIdSubscription != nil) && (carrierIdSubscription != carrierId)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (appVersionSubscription != nil) && (appVersionSubscription != appVersion)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (sdkVersionSubscription != nil) && (sdkVersionSubscription != sdkVersion)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (countrySubscription != nil) && (countrySubscription != country)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (languageSubscription != nil) && (language != languageSubscription)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (timezoneSubscription != nil) && timezone != timezoneSubscription
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (partner_device_idSubscription != nil) &&  (PartnerDeviceId != partner_device_idSubscription)
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        else if (advertisingIdSubscription != nil) &&  advertisingIdSubscription != advertisingId
+        {
+            makeSubscriptionRequestAPICall()
+
+        }
+        
+        if let lastSyncedSubscription = DengageLocalStorage.shared.value(for: .lastSyncdSubscription) as? Date
+        {
+            let nextSyncedSubscription = lastSyncedSubscription.addingTimeInterval(1200)
+            let currentSyncedSubscription = Date()
+            
+            if currentSyncedSubscription > nextSyncedSubscription
+            {
+                DengageLocalStorage.shared.set(value: Date(), for: .lastSyncdSubscription)
+
+                makeSubscriptionRequestAPICall()
+            }
+
+        }
+        else
+        {
+            DengageLocalStorage.shared.set(value: Date(), for: .lastSyncdSubscription)
+            makeSubscriptionRequestAPICall()
+        }
+    
+        
+    }
+    
+    func makeSubscriptionRequestAPICall()
+    {
         eventManager.eventSessionStart()
         let request = MakeSubscriptionRequest(config: config)
         Logger.log(message: "sync Started")
@@ -103,6 +227,22 @@ extension DengageManager {
             switch result {
             case .success(_):
                 Logger.log(message: "sync success")
+                
+                
+                DengageLocalStorage.shared.set(value: self.config.integrationKey, for: .integrationKeySubscription)
+                DengageLocalStorage.shared.set(value: self.config.deviceToken, for: .tokenSubscription)
+                DengageLocalStorage.shared.set(value: self.config.getContactKey() ?? "", for: .contactKeySubscription)
+                DengageLocalStorage.shared.set(value: self.config.permission, for: .permissionSubscription)
+                DengageLocalStorage.shared.set(value: self.config.applicationIdentifier, for: .udidSubscription)
+                DengageLocalStorage.shared.set(value: self.config.getCarrierIdentifier, for: .carrierIdSubscription)
+                DengageLocalStorage.shared.set(value: self.config.appVersion, for: .appVersionSubscription)
+                DengageLocalStorage.shared.set(value: SDK_VERSION, for: .sdkVersionSubscription)
+                DengageLocalStorage.shared.set(value: self.config.deviceCountryCode, for: .countrySubscription)
+                DengageLocalStorage.shared.set(value: self.config.deviceLanguage, for: .languageSubscription)
+                DengageLocalStorage.shared.set(value: self.config.deviceTimeZone, for: .timezoneSubscription)
+                DengageLocalStorage.shared.set(value: self.config.getPartnerDeviceID() ?? "", for: .partner_device_idSubscription)
+                DengageLocalStorage.shared.set(value: self.config.advertisingIdentifier, for: .advertisingIdSubscription)
+
             case .failure(_):
                 Logger.log(message: "sync error")
             }
@@ -148,7 +288,8 @@ extension DengageManager {
         
     }
     
-    private func fetchSDK(){
+    func fetchSDK(){
+        
         Logger.log(message: "fetchSDK Started")
         let request = GetSDKParamsRequest(integrationKey: config.integrationKey,
                                           deviceId: config.applicationIdentifier)
@@ -212,7 +353,7 @@ extension DengageManager {
                 Logger.log(message: "dengageDeviceIdSendToServer \(response)")
                 
             case .failure:
-                Logger.log(message: "SDK PARAMS Config fetchin failed")
+                Logger.log(message: "Sending dengage device id to server failed")
             }
         }
     }
