@@ -1,5 +1,6 @@
 import Foundation
 import UIKit
+import StoreKit
 
 public class Dengage  {
     
@@ -21,19 +22,42 @@ public class Dengage  {
     @objc public static func start(apiKey: String,
                                    application: UIApplication,
                                    launchOptions: [UIApplication.LaunchOptionsKey: Any]?,
-                                   dengageOptions options: DengageOptions = DengageOptions()) {
+                                   dengageOptions options: DengageOptions = DengageOptions() , deviceId : String? = nil, contactKey : String? = nil , partnerDeviceId :String? = nil) {
         dengage = .init(with: apiKey,
                         application: application,
                         launchOptions:launchOptions,
                         dengageOptions: options)
+        
+        if deviceId != nil && deviceId != ""
+        {
+            dengage?.config.set(deviceId: deviceId ?? "")
+
+        }
+        
+        if partnerDeviceId != nil && partnerDeviceId != ""
+        {
+            dengage?.config.setPartnerDeviceId(adid: partnerDeviceId)
+
+        }
+        
+        if contactKey != nil && contactKey != ""
+        {
+            dengage?.set(contactKey)
+
+        }
+        
+
+        
     }
     
     
-    @objc public static func initWithLaunchOptions(categories: Set<UNNotificationCategory>? = nil,application: UIApplication,withLaunchOptions: [UIApplication.LaunchOptionsKey: Any],badgeCountReset: Bool = false)
+    @objc public static func initWithLaunchOptions(categories: Set<UNNotificationCategory>? = nil,application: UIApplication,withLaunchOptions: [UIApplication.LaunchOptionsKey: Any],badgeCountReset: Bool = false, deviceId : String? = nil , contactKey : String? = nil , partnerDeviceId :String? = nil)
     {
         let key =  DengageLocalStorage.shared.value(for: .integrationKey) as? String
 
-        self.start(apiKey: key ?? "", application: application, launchOptions: withLaunchOptions, dengageOptions: DengageOptions())
+        self.start(apiKey: key ?? "", application: application, launchOptions: withLaunchOptions, dengageOptions: DengageOptions(),deviceId: deviceId,contactKey: contactKey,partnerDeviceId: partnerDeviceId)
+        
+        
         
     }
     
@@ -43,7 +67,7 @@ public class Dengage  {
     }
     
     @objc public static func register(deviceToken: Data) {
-        dengage?.register(deviceToken)
+         dengage?.register(deviceToken)
     }
     
     @objc public static func setContactKey(contactKey: String?) {
@@ -118,6 +142,12 @@ public class Dengage  {
         self.set(deviceId: applicationIdentifier)
     }
     
+    @objc public static func setDevelopmentStatus(isDebug:Bool)
+    {
+        DengageLocalStorage.shared.set(value: isDebug, for: .appEnvironment)
+
+    }
+    
     //todo add objc
     public static func getInboxMessages(offset: Int,
                                         limit: Int = 20,
@@ -152,6 +182,12 @@ public class Dengage  {
         dengage?.notificationManager.promptForPushNotifications()
     }
     
+    @objc public static func callVisitorInfoAPI(){
+        
+        dengage?.inAppManager.getVisitorInfo()
+        
+    }
+    
     @objc public static func promptForPushNotifications(completion: @escaping (_ isUserGranted: Bool) -> Void) {
         dengage?.notificationManager.promptForPushNotifications(callback: completion)
     }
@@ -160,6 +196,10 @@ public class Dengage  {
         dengage?.inAppManager.setNavigation(screenName:screenName)
     }
     
+    
+    @objc public static func removeInAppMessageDisplay(){
+        dengage?.inAppManager.removeInAppMessageDisplay()
+    }
     
     
     @objc public static func showRealTimeInApp(
@@ -340,6 +380,12 @@ extension Dengage {
             case .failure(let errorValue):
                 error(errorValue)
             }
+        }
+    }
+    
+    public static func showRatingView() {
+        if #available( iOS 10.3,*){
+            SKStoreReviewController.requestReview()
         }
     }
 }
