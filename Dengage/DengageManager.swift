@@ -11,7 +11,7 @@ public class DengageManager {
     var apiClient: DengageNetworking
     var eventManager: DengageEventProtocolInterface
     var sessionManager: DengageSessionManagerInterface
-    var inboxManager: DengageInboxManagerInterface
+    var inboxManager: DengageInboxManager
     var inAppManager: DengageInAppMessageManager
     var notificationManager: DengageNotificationManagerInterface
     var dengageRFMManager: DengageRFMManager
@@ -47,10 +47,19 @@ public class DengageManager {
         
         sync()
         getSDKParams()
+        
+        DispatchQueue.main.asyncAfter(deadline: .now() + 120, execute: {
+            
+            self.inAppManager.getVisitorInfo()
+            
+        })
+     
+        
     }
 }
 
 extension DengageManager {
+    
     func register(_ deviceToken: Data) {
         Logger.log(message: "Register Token")
         var token = "";
@@ -74,6 +83,8 @@ extension DengageManager {
         if previous != contactKey {
             let newKey = (contactKey?.isEmpty ?? true) ? nil : contactKey
             DengageLocalStorage.shared.set(value: newKey, for: .contactKey)
+            inboxManager.inboxMessages.removeAll()
+            inboxManager.inboxMessages = []
             _ = sessionManager.createSession(force: true)
             resetUsageStats()
             Dengage.syncSubscription()
