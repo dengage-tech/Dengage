@@ -297,56 +297,55 @@ final class DengageConfiguration:Encodable {
     
     static func getAdvertisingId() -> String{
         
-       /* var advertisingId = ""
-        
-        if #available(iOS 14, *) {
-            ATTrackingManager.requestTrackingAuthorization { status in
-                switch status {
-                case .authorized:
-                    // Tracking authorization dialog was shown
-                    // and we are authorized
-                    print("Authorized")
-                    
-                    // Now that we are authorized we can get the IDFA
-                    advertisingId =  ASIdentifierManager.shared().advertisingIdentifier.uuidString.lowercased()
-
-                    
-                case .denied:
-                    // Tracking authorization dialog was
-                    // shown and permission is denied
-                    print("Denied")
-                case .notDetermined:
-                    // Tracking authorization dialog has not been shown
-                    print("Not Determined")
-                case .restricted:
-                    print("Restricted")
-                @unknown default:
-                    print("Unknown")
-                }
-            }
-        } else {
-            // Fallback on earlier versions
+        var advertisingId = ""
             
-            guard ASIdentifierManager.shared().isAdvertisingTrackingEnabled,
+            if #available(iOS 14, *) {
+                ATTrackingManager.requestTrackingAuthorization { status in
+                    switch status {
+                    case .authorized:
+                        // Tracking authorization dialog was shown
+                        // and we are authorized
+                        print("Authorized")
+                        
+                        // Now that we are authorized we can get the IDFA
+                        advertisingId =  ASIdentifierManager.shared().advertisingIdentifier.uuidString.lowercased()
+                        
+                    case .denied:
+                        // Tracking authorization dialog was
+                        // shown and permission is denied
+                        print("Denied")
+                    case .notDetermined:
+                        // Tracking authorization dialog has not been shown
+                        print("Not Determined")
+                    case .restricted:
+                        print("Restricted")
+                    @unknown default:
+                        print("Unknown")
+                    }
+                }
+            } else {
+                // Fallback on earlier versions
+                
+                guard ASIdentifierManager.shared().isAdvertisingTrackingEnabled,
+                      ASIdentifierManager.shared().advertisingIdentifier.isNotEmpty else {
+                    return ""
+                }
+                
+                return ASIdentifierManager.shared().advertisingIdentifier.uuidString.lowercased()
+                
+            }
+            
+            
+            return advertisingId
+            
+          /*  guard ASIdentifierManager.shared().isAdvertisingTrackingEnabled,
                   ASIdentifierManager.shared().advertisingIdentifier.isNotEmpty else {
                 return ""
             }
             
-            return ASIdentifierManager.shared().advertisingIdentifier.uuidString.lowercased()
+            return ASIdentifierManager.shared().advertisingIdentifier.uuidString.lowercased()*/
             
-        }
-        
-        
-        return advertisingId */
-        
-        guard ASIdentifierManager.shared().isAdvertisingTrackingEnabled,
-              ASIdentifierManager.shared().advertisingIdentifier.isNotEmpty else {
-            return ""
-        }
-        
-        return ASIdentifierManager.shared().advertisingIdentifier.uuidString.lowercased()
-        
-        
+            
     }
     
     static func getCarrierId() -> String { // *.*
