@@ -18,6 +18,8 @@ final class DengageNetworking {
         var apiRequest = request.asURLRequest(with: baseURL)
         apiRequest.setValue(config.userAgent, forHTTPHeaderField: "User-Agent")
         
+        Logger.log(message: "API REQUEST Headers", argument: "\(apiRequest.allHTTPHeaderFields)")
+
         Logger.log(message: "API REQUEST URL", argument: "\(apiRequest)")
 
         
@@ -33,9 +35,9 @@ final class DengageNetworking {
 
             if let data = data  {
                 
-                
-                Logger.log(message: "HTTP API RESPONSE:\n \(apiRequest.url)", argument: data.pretty)
+                Logger.log(message: "HTTP API RESPONSE:\n for API \(apiRequest.url)", argument: data.pretty)
             }
+            
             Logger.log(message: "HTTP API STATUS CODE:\n", argument: httpResponse.statusCode.description)
             switch httpResponse.statusCode {
             case 200..<300:
@@ -82,6 +84,8 @@ final class DengageNetworking {
             return config.dengageDeviceIdApiUrl
         case .inapp:
             return config.inAppURL
+        case .inappRealTime:
+            return config.inAppRealTimeURL
         }
     }
 }
