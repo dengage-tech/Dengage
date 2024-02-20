@@ -31,7 +31,7 @@ extension DengageInAppMessageManager{
         fetchRealTimeMessages()
        // getVisitorInfo()
         Logger.log(message: "fetchInAppMessages called")
-      //  guard shouldFetchInAppMessages else {return}
+        guard shouldFetchInAppMessages else {return}
         guard let remoteConfig = config.remoteConfiguration, let accountName = remoteConfig.accountName else { return }
         Logger.log(message: "fetchInAppMessages request started")
         let request = GetInAppMessagesRequest(accountName: accountName,
@@ -88,7 +88,7 @@ extension DengageInAppMessageManager{
                 let nextFetchTime = (Date().timeMiliseconds) + (remoteConfig.fetchIntervalInMin)
                 DengageLocalStorage.shared.set(value: nextFetchTime, for: .lastFetchedRealTimeInAppMessageTime)
                 let arrRealTimeInAppMessages = InAppMessage.mapRealTime(source: response)
-                self?.addInAppMessagesIfNeeded(arrRealTimeInAppMessages, forRealTime: true)               
+                self?.addInAppMessagesIfNeeded(arrRealTimeInAppMessages, forRealTime: true)
                 
             case .failure(let error):
                 Logger.log(message: "fetchRealTimeInAppMessages_ERROR", argument: error.localizedDescription)
@@ -246,7 +246,19 @@ extension DengageInAppMessageManager{
         apiClient.send(request: request) { [weak self] result in
             switch result {
             case .success( _ ):
-                self?.removeInAppMessageFromCache(messageId)
+//                if let count = message.showCount , let maxShowCount = message.data.displayTiming.maxShowCount
+//                {
+//                    if count >= maxShowCount
+//                    {
+//                        self?.removeInAppMessageFromCache(messageId)
+//                    }
+//                }
+//                else
+//                {
+//                    self?.removeInAppMessageFromCache(messageId)
+//
+//                }
+                break
             case .failure(let error):
                 Logger.log(message: "setInAppMessageAsClicked_ERROR", argument: error.localizedDescription)
             }
@@ -427,17 +439,47 @@ extension DengageInAppMessageManager {
     
     private func createInAppBrowserWindow(for controller: UIViewController)
     {
-        if #available(iOS 11.0, *) {
-          
-            if let topNotch = UIApplication.shared.delegate?.window??.safeAreaInsets.top
-            {
-                if topNotch > 20
+        
+        if #available(iOS 13.0, *) {
+            if let windowScene = (UIApplication.shared.connectedScenes.first as? UIWindowScene) {
+                
+                if let topNotch = windowScene.windows.first?.safeAreaInsets.top
                 {
                     let frame = CGRect(x: 0, y: topNotch, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height - topNotch)
                     inAppBrowserWindow = UIWindow(frame: frame)
+                    inAppBrowserWindow = UIWindow(windowScene: windowScene)
                     inAppBrowserWindow?.rootViewController = controller
-                    inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
                     inAppBrowserWindow?.makeKeyAndVisible()
+                }
+                else
+                {
+                    inAppBrowserWindow = UIWindow(frame: UIScreen.main.bounds)
+                    inAppBrowserWindow = UIWindow(windowScene: windowScene)
+                    inAppBrowserWindow?.rootViewController = controller
+                    inAppBrowserWindow?.makeKeyAndVisible()
+                }
+               
+            }
+            else {
+                
+                if let topNotch = UIApplication.shared.delegate?.window??.safeAreaInsets.top
+                {
+                    if topNotch > 20
+                    {
+                        let frame = CGRect(x: 0, y: topNotch, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height - topNotch)
+                        inAppBrowserWindow = UIWindow(frame: frame)
+                        inAppBrowserWindow?.rootViewController = controller
+                        inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
+                        inAppBrowserWindow?.makeKeyAndVisible()
+                    }
+                    else
+                    {
+                        let frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+                        inAppBrowserWindow = UIWindow(frame: frame)
+                        inAppBrowserWindow?.rootViewController = controller
+                        inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
+                        inAppBrowserWindow?.makeKeyAndVisible()
+                    }
                 }
                 else
                 {
@@ -447,43 +489,87 @@ extension DengageInAppMessageManager {
                     inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
                     inAppBrowserWindow?.makeKeyAndVisible()
                 }
+                
+                
+                
             }
-            else
-            {
-                let frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+        } else {
+            if #available(iOS 11.0, *) {
+              
+                if let topNotch = UIApplication.shared.delegate?.window??.safeAreaInsets.top
+                {
+                    if topNotch > 20
+                    {
+                        let frame = CGRect(x: 0, y: topNotch, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height - topNotch)
+                        inAppBrowserWindow = UIWindow(frame: frame)
+                        inAppBrowserWindow?.rootViewController = controller
+                        inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
+                        inAppBrowserWindow?.makeKeyAndVisible()
+                    }
+                    else
+                    {
+                        let frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+                        inAppBrowserWindow = UIWindow(frame: frame)
+                        inAppBrowserWindow?.rootViewController = controller
+                        inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
+                        inAppBrowserWindow?.makeKeyAndVisible()
+                    }
+                }
+                else
+                {
+                    let frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+                    inAppBrowserWindow = UIWindow(frame: frame)
+                    inAppBrowserWindow?.rootViewController = controller
+                    inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
+                    inAppBrowserWindow?.makeKeyAndVisible()
+                }
+                
+                
+                
+            } else {
+            //backward compatibility to previous versions?
+                
+                let frame = CGRect(x: 0, y: 20, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
                 inAppBrowserWindow = UIWindow(frame: frame)
                 inAppBrowserWindow?.rootViewController = controller
                 inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
                 inAppBrowserWindow?.makeKeyAndVisible()
+                
+                
             }
-            
-            
-            
-        } else {
-        //backward compatibility to previous versions?
-            
-            let frame = CGRect(x: 0, y: 20, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-            inAppBrowserWindow = UIWindow(frame: frame)
-            inAppBrowserWindow?.rootViewController = controller
-            inAppBrowserWindow?.windowLevel = UIWindow.Level(rawValue: 2)
-            inAppBrowserWindow?.makeKeyAndVisible()
-            
-            
         }
-
-        
-        
-       
-        
     }
     
     private func createInAppWindow(for controller: UIViewController){
         
-        let frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
-        inAppMessageWindow = UIWindow(frame: frame)
-        inAppMessageWindow?.rootViewController = controller
-        inAppMessageWindow?.windowLevel = UIWindow.Level(rawValue: 2)
-        inAppMessageWindow?.makeKeyAndVisible()
+        
+        if #available(iOS 13.0, *) {
+            
+            if let windowScene = (UIApplication.shared.connectedScenes.first as? UIWindowScene) {
+                inAppMessageWindow = UIWindow(frame: UIScreen.main.bounds)
+                inAppMessageWindow = UIWindow(windowScene: windowScene)
+                inAppMessageWindow?.rootViewController = controller
+                inAppMessageWindow?.makeKeyAndVisible()
+            }
+            else {
+                
+                let frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+                inAppMessageWindow = UIWindow(frame: frame)
+                inAppMessageWindow?.rootViewController = controller
+                inAppMessageWindow?.windowLevel = UIWindow.Level(rawValue: 2)
+                inAppMessageWindow?.makeKeyAndVisible()
+            }
+            
+            
+        } else {
+            
+            let frame = CGRect(x: 0, y: 0, width: UIScreen.main.bounds.width, height: UIScreen.main.bounds.height)
+            inAppMessageWindow = UIWindow(frame: frame)
+            inAppMessageWindow?.rootViewController = controller
+            inAppMessageWindow?.windowLevel = UIWindow.Level(rawValue: 2)
+            inAppMessageWindow?.makeKeyAndVisible()
+        }
+    
         
     }
     
@@ -495,60 +581,61 @@ extension DengageInAppMessageManager {
     }
     
     private func addInAppMessagesIfNeeded(_ messages:[InAppMessage], forRealTime: Bool = false){
+        
         DispatchQueue.main.async {
             
             if forRealTime {
                 
+                var localArrMessages = [InAppMessage]()
+
                 var previousMessages = DengageLocalStorage.shared.getInAppMessages()
                 
                 if previousMessages.count > 0
                 {
-                    for msg in messages
+                    for i in 0...previousMessages.count - 1
                     {
-                        let arrMessages = previousMessages.filter({$0.id == msg.id})
-                        
-                        
-                        if arrMessages.count == 0
+                        let prevMsg = previousMessages[i]
+                        if (messages.contains(prevMsg))
                         {
-                            previousMessages.append(msg)
-
+                            localArrMessages.append(prevMsg)
                         }
-                        else if arrMessages.count == 1
-                        {
-                            previousMessages = previousMessages.filter({$0.id != msg.id})
-                            previousMessages.append(msg)
-                            DengageLocalStorage.shared.save(previousMessages)
-
-                        }
-                        else
-                        {
-                            previousMessages = previousMessages.filter({$0.id != msg.id})
-                            DengageLocalStorage.shared.save(previousMessages)
-                        }
-
                         
                     }
                     
+                    DengageLocalStorage.shared.save(localArrMessages)
+                    previousMessages = DengageLocalStorage.shared.getInAppMessages()
+                }
+               
+                
+                var updatedMessages = [InAppMessage]()
+
+                if previousMessages.count > 0
+                {
+                    for serverMsg in messages
+                    {
+                        for prevMsg in previousMessages
+                        {
+                            if prevMsg.id == serverMsg.id  && !(updatedMessages.contains(where: {$0.id == serverMsg.id}))
+                            {
+                                let updatedMessage = InAppMessage(id: serverMsg.id,data: serverMsg.data,nextDisplayTime: prevMsg.nextDisplayTime,showCount: prevMsg.showCount)
+                            
+                                updatedMessages.append(updatedMessage)
+                            }
+                            else if !(previousMessages.contains(serverMsg))
+                            {
+                                updatedMessages.append(serverMsg)
+
+                            }
+                        }
+                    }
                 }
                 else
                 {
-                     previousMessages.append(contentsOf: messages)
-
- 
+                    updatedMessages.append(contentsOf: messages)
                 }
 
+                DengageLocalStorage.shared.save(updatedMessages)
                 
-                var updatedMessages = [InAppMessage]()
-                
-                for message in previousMessages where messages.contains(where: {$0.id == message.id}) {
-                    
-                    let updatedMessage = InAppMessage(id: message.id,
-                                                      data: message.data,
-                                                      nextDisplayTime: message.nextDisplayTime,
-                                                      showCount: message.showCount)
-                    updatedMessages.append(updatedMessage)
-                }
-                DengageLocalStorage.shared.save(updatedMessages) 
             }
             else {
                 var previousMessages = DengageLocalStorage.shared.getInAppMessages()
@@ -557,6 +644,7 @@ extension DengageInAppMessageManager {
                 }
                 previousMessages.append(contentsOf: messages)
                 DengageLocalStorage.shared.save(previousMessages)
+
             }
             
         }
