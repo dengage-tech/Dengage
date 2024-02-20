@@ -410,6 +410,8 @@ extension Dengage {
             SKStoreReviewController.requestReview()
         }
     }
+    
+    
 }
 
 //MARK: - DengageDeviceIdApiUrl
