@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		D654A1682BF1E65100141E5B /* InAppInlineElementView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D654A1672BF1E65100141E5B /* InAppInlineElementView.swift */; };
 		D6D909DF2AACAFDE00986A15 /* DengageKeychain.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6D909CD2AACAFDD00986A15 /* DengageKeychain.swift */; };
 		D6D909E02AACAFDE00986A15 /* DengageInboxManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6D909CE2AACAFDD00986A15 /* DengageInboxManager.swift */; };
 		D6D909E12AACAFDE00986A15 /* DengageManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = D6D909CF2AACAFDD00986A15 /* DengageManager.swift */; };
@@ -122,6 +123,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
+		D654A1672BF1E65100141E5B /* InAppInlineElementView.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = InAppInlineElementView.swift; sourceTree = "<group>"; };
 		D6D909CD2AACAFDD00986A15 /* DengageKeychain.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DengageKeychain.swift; sourceTree = "<group>"; };
 		D6D909CE2AACAFDD00986A15 /* DengageInboxManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DengageInboxManager.swift; sourceTree = "<group>"; };
 		D6D909CF2AACAFDD00986A15 /* DengageManager.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = DengageManager.swift; sourceTree = "<group>"; };
@@ -288,6 +290,7 @@
 			children = (
 				D6D909FE2AACAFEB00986A15 /* InAppMessagesActionsDelegate.swift */,
 				D6D909FF2AACAFEB00986A15 /* InAppBrowserViewController.swift */,
+				D654A1672BF1E65100141E5B /* InAppInlineElementView.swift */,
 				D6D90A002AACAFEB00986A15 /* InAppMessageHTMLViewController.swift */,
 				D6D90A012AACAFEB00986A15 /* InAppMessageHTMLView.swift */,
 			);
@@ -716,6 +719,7 @@
 				D6D90A0D2AACAFEB00986A15 /* InAppMessageHTMLViewController.swift in Sources */,
 				D6D90A4F2AACAFF700986A15 /* TransactionalOpenEventRequest.swift in Sources */,
 				D6D90A362AACAFF700986A15 /* GetSDKParamsResponse.swift in Sources */,
+				D654A1682BF1E65100141E5B /* InAppInlineElementView.swift in Sources */,
 				D6D909ED2AACAFDE00986A15 /* DengageInAppMessageUtils.swift in Sources */,
 				D6D90A432AACAFF700986A15 /* MarkAsRealTimeInAppMessageAsDismissedRequest.swift in Sources */,
 				D6D909E72AACAFDE00986A15 /* DengageConfiguration.swift in Sources */,
