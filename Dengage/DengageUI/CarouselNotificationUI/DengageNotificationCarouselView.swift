@@ -101,25 +101,88 @@ extension DengageNotificationCarouselView: UICollectionViewDelegateFlowLayout {
 
 extension DengageNotificationCarouselView: UICollectionViewDelegate{
     
+    
+    
+    
+    
+    
+    
     public func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        guard let url = URL(string: payloads[indexPath.item].targetUrl ?? "") ?? targetUrl else { return }
+        let currentPayload = payloads[indexPath.item]
+        
+        guard let url = URL(string: currentPayload.targetUrl ?? "") ?? targetUrl else { return }
         UIApplication.shared.open(url, options: [:], completionHandler: nil)
+        
+        if let content = bestAttemptContent {
+            guard let messageId = content.message?.messageId else {
+                Logger.log(message: "messageId is not found")
+                return
+            }
+            Logger.log(message: "messageId is", argument: String(messageId))
+            
+            guard let messageDetails = content.message?.messageDetails else {
+                Logger.log(message: "messageDetails is not found")
+                return
+            }
+            Logger.log(message: "messageDetails is", argument: messageDetails)
+            
+            if let carouselId = currentPayload.id, let apiKey = DengageLocalStorage.shared.value(for: .integrationKey) as? String {
+                let options = DengageOptions(disableOpenURL: false, badgeCountReset: false, disableRegisterForRemoteNotifications: false)
+                let config = DengageConfiguration(integrationKey: apiKey, options: options)
+                let networking = DengageNetworking(config: config)
+                let carouselIdString = String(carouselId)
+                
+                if let transactionId = content.message?.transactionId {
+                    Logger.log(message: "BUTTON_ID is", argument: String(transactionId))
+                    let request = TransactionalOpenEventRequest(integrationKey: apiKey,
+                                                                transactionId: transactionId,
+                                                                messageId: messageId,
+                                                                messageDetails: messageDetails,
+                                                                buttonId: carouselIdString)
+                    
+                    networking.send(request: request) { result in
+                        switch result {
+                        case .success(_):
+                            Logger.log(message: "Push Transactional Open Event success")
+                        case .failure(let error):
+                            Logger.log(message: "Push Open Transactional Event fail", argument: error.localizedDescription)
+                        }
+                    }
+                    
+                } else {
+                    let request = OpenEventRequest(integrationKey: apiKey,
+                                                   messageId: messageId,
+                                                   messageDetails: messageDetails,
+                                                   buttonId: carouselIdString)
+                    networking.send(request: request) { result in
+                        switch result {
+                        case .success(_):
+                            Logger.log(message: "Push Open Event success")
+                        case .failure(let error):
+                            Logger.log(message: "Push Open Event fail", argument: error.localizedDescription)
+                        }
+                    }
+                }
+                //Dengage.didClickCarouselItem(content: content, carouselId: carouselId)
+            }
+   
+        }
     }
+
 }
 
 extension DengageNotificationCarouselView{
     public func didReceive(_ notification: UNNotification) {
         self.bestAttemptContent = (notification.request.content.mutableCopy() as? UNMutableNotificationContent)
-        
+        guard let userInfo = bestAttemptContent?.userInfo,
+              let contents = userInfo["carouselContent"] as? [AnyObject] else { return }
+                
         if #available(iOS 15.0, *) {
             self.bestAttemptContent?.interruptionLevel = .timeSensitive
         } else {
             // Fallback on earlier versions
         }
         
-        guard let userInfo = bestAttemptContent?.userInfo,
-              let contents = userInfo["carouselContent"] as? [AnyObject] else { return }
-                
         UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: [notification.request.identifier])
         
         self.userInfo = userInfo

@@ -6,7 +6,7 @@ final class DengageNotificationExtension {
     static func didReceiveNotificationRequest(_ bestAttemptContent: UNMutableNotificationContent?,
                                               withContentHandler contentHandler:  @escaping (UNNotificationContent) -> Void) {
         
-
+        
         Logger.log(message: "NOTIFICATION_RECEIVED")
         
         guard let bestAttemptContent = bestAttemptContent, let message = bestAttemptContent.message else {
@@ -21,7 +21,6 @@ final class DengageNotificationExtension {
             Logger.log(message: "title or subtitle not found")
             return
         }
-                
         
         if #available(iOS 15.0, *) {
             bestAttemptContent.interruptionLevel = .timeSensitive
@@ -29,26 +28,53 @@ final class DengageNotificationExtension {
             // Fallback on earlier versions
         }
         
+        if let addToInbox = message.addToInbox, addToInbox {
+            
+        }
+        
+        /*
+        do {
+            let data =  try JSONSerialization.data(withJSONObject: bestAttemptContent.userInfo, options: JSONSerialization.WritingOptions.prettyPrinted)
+            let convertedString = String(data: data, encoding: String.Encoding.utf8)
+            Logger.log(message: convertedString ?? "")
+            //DengageLocalStorage.shared.set(value: convertedString, for: .lastPushPayload)
+            let localMessage = DengageLocalInboxMessage(id: "",
+                                                        title: message.title,
+                                                        message: message.messageSource,
+                                                        mediaURL: message.urlImageString,
+                                                        targetUrl: message.targetUrl,
+                                                        receiveDate: Date(),
+                                                        isClicked: false,
+                                                        carouselItems: nil,
+                                                        isDeleted: false)
+                                                        
+            //let localMessage = DengageLocalInboxMessage(title: message.title ?? "NULL")
+            var localMessages: [DengageLocalInboxMessage] = []
+            localMessages.append(localMessage)
+            DengageLocalStorage.shared.save(localMessages)
+        } catch let myJSONError {
+            print(myJSONError)
+        }
+         */
+
+
         addActionButtonsIfNeeded(bestAttemptContent)
         
         bestAttemptContent.title = title
         bestAttemptContent.subtitle = subtitle
         
         
-        guard let urlImageString = message.urlImageString, let contentUrl = URL(string: urlImageString) else { return }
-        
-        guard let imageData = NSData(contentsOf: contentUrl) else {
-            Logger.log(message: "URL_STR_IS_NULL")
-            return
+        if let urlImageString = message.urlImageString, let contentUrl = URL(string: urlImageString) {
+            if let imageData = NSData(contentsOf: contentUrl) {
+                guard let attachment = UNNotificationAttachment.create(fileIdentifier: contentUrl.lastPathComponent,
+                                                                       data: imageData) else {
+                    Logger.log(message: "UNNotificationAttachment.saveImageToDisk()")
+                    return
+                }
+                
+                bestAttemptContent.attachments = [ attachment ]
+            }
         }
-        
-        guard let attachment = UNNotificationAttachment.create(fileIdentifier: contentUrl.lastPathComponent,
-                                                               data: imageData) else {
-            Logger.log(message: "UNNotificationAttachment.saveImageToDisk()")
-            return
-        }
-        
-        bestAttemptContent.attachments = [ attachment ]
         contentHandler(bestAttemptContent)
     }
     
@@ -61,9 +87,10 @@ final class DengageNotificationExtension {
         
         Logger.log(message: "Parsing action buttons")
         
-        let actions: [UNNotificationAction] = actionButtons.compactMap{ item in
+        let actions: [UNNotificationAction] = actionButtons.compactMap { item in
             guard let id = item.id, let title = item.text else { return nil }
-            return UNNotificationAction(identifier: id, title: title, options: .foreground)
+            let options: UNNotificationActionOptions = ("NO".caseInsensitiveCompare(id) == .orderedSame)  ? [] : .foreground
+            return UNNotificationAction(identifier: id, title: title, options: options)
         }
         
         let category: UNNotificationCategory;
@@ -92,7 +119,7 @@ public extension UNNotificationAttachment {
         let fileManager = FileManager.default
         let folderName = ProcessInfo.processInfo.globallyUniqueString
         guard let folderURL = NSURL(fileURLWithPath: NSTemporaryDirectory())
-                .appendingPathComponent(folderName, isDirectory: true) else { return nil }
+            .appendingPathComponent(folderName, isDirectory: true) else { return nil }
         
         do {
             try fileManager.createDirectory(at: folderURL, withIntermediateDirectories: true, attributes: nil)
