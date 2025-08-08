@@ -11,7 +11,7 @@ final class DengageNotificationManager: DengageNotificationManagerInterface {
     private let notificationCenter = UNUserNotificationCenter.current()
     
     var openTriggerCompletionHandler: ((_ notificationResponse: UNNotificationResponse) -> Void)?
-    
+
     init(config: DengageConfiguration,
          service: DengageNetworking,
          eventManager: DengageEventProtocolInterface,
@@ -32,15 +32,13 @@ final class DengageNotificationManager: DengageNotificationManagerInterface {
         let content = response.notification.request.content
         guard let messageSource = content.message?.messageSource,
               MESSAGE_SOURCE == messageSource else {
-            //                  center.delegate?.userNotificationCenter?(center,
-            //                                                           didReceive: response,
-            //                                                           withCompletionHandler: completionHandler)
-            
-          
+//                  center.delegate?.userNotificationCenter?(center,
+//                                                           didReceive: response,
+//                                                           withCompletionHandler: completionHandler)
             
             completionHandler()
             
-            return
+           return
         }
         
         do {
@@ -50,6 +48,7 @@ final class DengageNotificationManager: DengageNotificationManagerInterface {
         } catch let myJSONError {
             print(myJSONError)
         }
+        
         
         let actionIdentifier = response.actionIdentifier
         switch actionIdentifier {
@@ -66,11 +65,13 @@ final class DengageNotificationManager: DengageNotificationManagerInterface {
         }
         
         openTriggerCompletionHandler?(response)
-        
-        if !config.options.disableOpenURL
+    
+        if !config.options.disableOpenURL && !Dengage.isPushSilent(response: response)
         {
             if let targetUrl = content.message?.targetUrl, !targetUrl.isEmpty {
-                openDeeplink(link: targetUrl)
+                if actionIdentifier == UNNotificationDefaultActionIdentifier {
+                    openDeeplink(link: targetUrl)
+                }
                 eventManager.sessionStart(referrer: content.message?.targetUrl)
             }
         }
@@ -90,18 +91,27 @@ final class DengageNotificationManager: DengageNotificationManagerInterface {
                 print(myJSONError)
             }
             
-            
+            // TODO: sendEventWithContent neden if'in dışında? priya
             if let messageSource = message.messageSource, MESSAGE_SOURCE == messageSource
             {
                 
             }
-            if let targetUrl = message.targetUrl, !targetUrl.isEmpty, !config.options.disableOpenURL {
+            
+            sendEventWithContent(messageId: message.messageId, messageDetails: message.messageDetails, transactionId: message.transactionId, actionIdentifier: nil)
+
+            
+            if let targetUrl = message.targetUrl, !targetUrl.isEmpty, !config.options.disableOpenURL && !Dengage.isPushSilent(userInfo: userInfo)
+            {
                 openDeeplink(link: targetUrl)
                 eventManager.sessionStart(referrer: message.targetUrl)
             }
         }else{
             Logger.log(message: "UserInfo parse failed")
         }
+    }
+    
+    func didClickCarouselItem(content: UNNotificationContent, carouselId: Int) {
+        sendEventWithContent(content: content, actionIdentifier: String(carouselId))
     }
     
     private func openDeeplink(link: String?) {
@@ -115,10 +125,10 @@ final class DengageNotificationManager: DengageNotificationManagerInterface {
     }
     
     private func checkTargetUrlInActionButtons(content: UNNotificationContent,
-                                               actionIdentifier: String) {
+                                             actionIdentifier: String) {
         
         guard let actionButtons = content.message?.actionButtons else { return }
-        
+                
         for actionItem in actionButtons where actionItem.id == actionIdentifier {
             guard let url = actionItem.targetUrl, !url.isEmpty else { continue }
             openDeeplink(link: url)
@@ -144,6 +154,47 @@ final class DengageNotificationManager: DengageNotificationManagerInterface {
         }
         
         if let transactionId = content.message?.transactionId {
+            Logger.log(message: "BUTTON_ID is", argument: String(transactionId))
+
+            let request = TransactionalOpenEventRequest(integrationKey: config.integrationKey,
+                                                        transactionId: transactionId,
+                                                        messageId: messageId,
+                                                        messageDetails: messageDetails,
+                                                        buttonId: actionIdentifier)
+            
+            eventManager.sendTransactionalOpenEvet(request: request)
+        } else {
+            let request = OpenEventRequest(integrationKey: config.integrationKey,
+                                           messageId: messageId,
+                                           messageDetails: messageDetails,
+                                           buttonId: actionIdentifier)
+            eventManager.sendOpenEvet(request: request)
+        }
+        
+        if config.options.badgeCountReset == true {
+            UIApplication.shared.applicationIconBadgeNumber = 0
+        }
+    }
+    
+    private func sendEventWithContent(messageId: Int? , messageDetails : String?, transactionId:String? , actionIdentifier: String?) {
+        
+        guard let messageId = messageId else {
+            Logger.log(message: "MSG_ID is not found")
+            return
+        }
+        Logger.log(message: "MSG_ID is", argument: String(messageId))
+        
+        guard let messageDetails = messageDetails else {
+            Logger.log(message: "MSG_DETAILS is not found")
+            return
+        }
+        Logger.log(message: "MSG_DETAILS is", argument: messageDetails)
+        
+        if let actionIdentifier = actionIdentifier, actionIdentifier.isEmpty == false {
+            Logger.log(message: "BUTTON_ID is", argument: String(actionIdentifier))
+        }
+        
+        if let transactionId = transactionId {
             Logger.log(message: "BUTTON_ID is", argument: String(transactionId))
             
             let request = TransactionalOpenEventRequest(integrationKey: config.integrationKey,
@@ -175,7 +226,7 @@ extension DengageNotificationManager{
                 Dengage.register(deviceToken: Data())
                 return
             }
-            
+
             self.getNotificationSettings()
             Logger.log(message: "PERMISSION_GRANTED", argument: String(granted))
         }
@@ -215,6 +266,7 @@ protocol DengageNotificationManagerInterface: AnyObject{
                         _ response: UNNotificationResponse,
                         withCompletionHandler completionHandler: @escaping () -> Void)
     func didReceive(with userInfo: [AnyHashable: Any])
+    func didClickCarouselItem(content: UNNotificationContent, carouselId: Int)
     func promptForPushNotifications()
     func promptForPushNotifications(callback: @escaping (_ IsUserGranted: Bool) -> Void)
     func getNotificationSettings()

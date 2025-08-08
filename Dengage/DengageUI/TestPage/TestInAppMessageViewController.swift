@@ -74,7 +74,7 @@ extension TestInAppMessageViewController {
                                                   marginBottom: 5,
                                                   marginLeft: 5,
                                                   marginRight: 5,
-                                                  dismissOnTouchOutside: true, backgroundColor: "#FFFFFF")
+                                                  dismissOnTouchOutside: true, backgroundColor: "#ffffff")
                 let message = createInAppMessage(with: contentParams)
                 return InAppMessageTest(title: "Banner (image + button + close) (TOP + radius)", data: message)
             }
@@ -89,7 +89,7 @@ extension TestInAppMessageViewController {
                                                   marginBottom: 5,
                                                   marginLeft: 5,
                                                   marginRight: 5,
-                                                  dismissOnTouchOutside: true, backgroundColor: "#FFFFFF")
+                                                  dismissOnTouchOutside: true, backgroundColor: "#ffffff")
                 let message = createInAppMessage(with: contentParams)
                 return InAppMessageTest(title: "Banner (image + button + close) (BOTTOM + radius)", data: message)
             }
@@ -107,7 +107,7 @@ extension TestInAppMessageViewController {
                                                   marginBottom: 5,
                                                   marginLeft: 5,
                                                   marginRight: 5,
-                                                  dismissOnTouchOutside: true, backgroundColor: "#FFFFFF")
+                                                  dismissOnTouchOutside: true, backgroundColor: "#ffffff")
                 let message = createInAppMessage(with: contentParams)
                 return InAppMessageTest(title: "Image Modal (Button) (MIDDLE)", data: message)
             }
@@ -122,7 +122,7 @@ extension TestInAppMessageViewController {
                                                   marginBottom: 5,
                                                   marginLeft: 5,
                                                   marginRight: 5,
-                                                  dismissOnTouchOutside: true, backgroundColor: "#FFFFFF")
+                                                  dismissOnTouchOutside: true, backgroundColor: "#ffffff")
                 let message = createInAppMessage(with: contentParams)
                 return InAppMessageTest(title: "Image Modal (Button) (MIDDLE + radius)", data: message)
             }
@@ -137,7 +137,7 @@ extension TestInAppMessageViewController {
                                                   marginBottom: 5,
                                                   marginLeft: 5,
                                                   marginRight: 5,
-                                                  dismissOnTouchOutside: true, backgroundColor: "#FFFFFF")
+                                                  dismissOnTouchOutside: true, backgroundColor: "#ffffff")
                 let message = createInAppMessage(with: contentParams)
                 return InAppMessageTest(title: "Image Modal-Text (Button) (MIDDLE)", data: message)
             }
@@ -152,7 +152,7 @@ extension TestInAppMessageViewController {
                                                   marginBottom: 5,
                                                   marginLeft: 5,
                                                   marginRight: 5,
-                                                  dismissOnTouchOutside: true, backgroundColor: "#FFFFFF")
+                                                  dismissOnTouchOutside: true, backgroundColor: "#ffffff")
                 let message = createInAppMessage(with: contentParams)
                 return InAppMessageTest(title: "Image Modal-Text (Button) (MIDDLE) (Radius)", data: message)
             }
@@ -167,7 +167,7 @@ extension TestInAppMessageViewController {
                                                   marginBottom: nil,
                                                   marginLeft: nil,
                                                   marginRight: nil,
-                                                  dismissOnTouchOutside: true, backgroundColor: "#FFFFFF")
+                                                  dismissOnTouchOutside: true, backgroundColor: "#ffffff")
                 let message = createInAppMessage(with: contentParams)
                 return InAppMessageTest(title: "Full Image (Button) (FULL)", data: message)
             }
@@ -182,7 +182,7 @@ extension TestInAppMessageViewController {
                                                   marginBottom: nil,
                                                   marginLeft: nil,
                                                   marginRight: nil,
-                                                  dismissOnTouchOutside: true, backgroundColor: "#FFFFFF")
+                                                  dismissOnTouchOutside: true, backgroundColor: "#ffffff")
                 let message = createInAppMessage(with: contentParams)
                 return InAppMessageTest(title: "Full Image Text (Button) (FULL)", data: message)
             }
@@ -196,9 +196,9 @@ extension TestInAppMessageViewController {
                                         expireDate: "2030-10-11T12:00:00.000Z",
                                         priority: .high,
                                         content: content,
-                                        displayCondition: .init(screenNameFilters: [], screenNameFilterLogicOperator: .AND, ruleSet: nil), displayTiming: .init(delay: 0,
+                                        displayCondition: .init(screenNameFilters: [], ruleSet: nil, screenNameFilterLogicOperator: .AND), displayTiming: .init(delay: 0,
                                                                                                                            showEveryXMinutes: 0,
-                                                                                                                           maxShowCount: 1), publicId: nil)
+                                                                                                                                                                maxShowCount: 1, maxDismissCount: 0), publicId: nil, inlineTarget: .init(iosSelector: "hgh"))
             return InAppMessage(id:"", data: data, nextDisplayTime: 0)
         }
         

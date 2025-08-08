@@ -1,7 +1,7 @@
 
 import Foundation
 @objc public class DengageMessage: NSObject, Codable {
-
+    
     public let id: String
     public let title: String?
     public let message: String?
@@ -11,8 +11,10 @@ import Foundation
     public var isClicked: Bool
     public let carouselItems: [CarouselItem]?
     
+    public var isDeleted = false
+    
     required public init(from decoder: Decoder) throws {
-
+        
         let container = try decoder.container(keyedBy: CodingKeys.self)
         id = try container.decode(String.self, forKey: .id)
         isClicked = try container.decode(Bool.self, forKey: .isClicked)
@@ -36,4 +38,38 @@ import Foundation
         case message = "message_json"
         case carouselItems = "iosCarouselContent"
     }
+}
+
+@objc public class DengageLocalInboxMessage: NSObject, Codable {
+    
+    public let id: String
+    public let title: String?
+    public let message: String?
+    public let mediaURL: String?
+    public let targetUrl: String?
+    public let receiveDate: Date?
+    public var isClicked: Bool
+    public let carouselItems: [CarouselItem]?
+    public var isDeleted = false
+    
+    public init(id: String, title: String?, message: String?, mediaURL: String?,
+                targetUrl: String?, receiveDate: Date?, isClicked: Bool = false,
+                carouselItems: [CarouselItem]?, isDeleted: Bool = false) {
+        self.id = id
+        self.title = title
+        self.message = message
+        self.mediaURL = mediaURL
+        self.targetUrl = targetUrl
+        self.receiveDate = receiveDate
+        self.isClicked = isClicked
+        self.carouselItems = carouselItems
+        self.isDeleted = false
+    }
+}
+
+struct InboxMessageCache: Codable {
+    public var id: String
+    public var isClicked: Bool
+    public var isDeleted: Bool
+    public var receiveDate: Date?
 }

@@ -2,7 +2,7 @@ import Foundation
 struct GetMessagesRequest: APIRequest {
 
     typealias Response = [DengageMessage]
-    let enpointType: EndpointType = .push
+    let endpointType: EndpointType = .push
     let method: HTTPMethod = .get
     let path: String = "/api/pi/getMessages"
 
@@ -46,3 +46,4 @@ struct GetMessagesRequest: APIRequest {
 
     }
 }
+

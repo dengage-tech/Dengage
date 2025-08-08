@@ -5,12 +5,14 @@ struct InAppMessage: Codable {
     let data: InAppMessageData
     var nextDisplayTime: Double?
     var showCount: Int?
+    var dismissCount: Int?
     
     enum CodingKeys: String, CodingKey {
         case id = "smsg_id"
         case data = "message_json"
         case nextDisplayTime = "nextDisplayTime"
         case showCount = "showCount"
+        case dismissCount = "dismissCount"
     }
     
     static func mapRealTime(source: [InAppMessageData]) -> [InAppMessage] {
@@ -20,21 +22,22 @@ struct InAppMessage: Codable {
         }
     }
     
-    func isDisplayTimeAvailable() -> Bool{
-        return (data.displayTiming.showEveryXMinutes == nil ||
-                data.displayTiming.showEveryXMinutes == 0 ||
-                (nextDisplayTime ?? Date().timeMiliseconds) <= Date().timeMiliseconds) &&
-        (data.displayTiming.maxShowCount == nil ||
-         data.displayTiming.maxShowCount == 0 ||
-         (showCount ?? 0) < (data.displayTiming.maxShowCount ?? 0))
+    func isDisplayTimeAvailable() -> Bool {
+        if data.displayTiming.showEveryXMinutes == -1 &&
+           data.displayTiming.maxShowCount == -1 {
+            return true
+        } else {
+            let timingCondition = (data.displayTiming.showEveryXMinutes == nil ||
+                                   data.displayTiming.showEveryXMinutes == 0 ||
+                                   (nextDisplayTime ?? Date().timeMiliseconds) <= Date().timeMiliseconds)
+            
+            let countCondition = (data.displayTiming.maxShowCount == nil ||
+                                  data.displayTiming.maxShowCount == 0 ||
+                                  (showCount ?? 0) < (data.displayTiming.maxShowCount ?? 0))
+            
+            return timingCondition && countCondition
+        }
     }
-    
-//    private class func isDisplayTimeAvailable(for inAppMessage: InAppMessage)  -> Bool {
-//        return true
-//        return (inAppMessage.data.displayTiming.showEveryXMinutes == nil ||
-//                inAppMessage.data.displayTiming.showEveryXMinutes == 0 ||
-//                (inAppMessage.nextDisplayTime ?? Date().timeMiliseconds) <= Date().timeMiliseconds)
-//    }
 }
 
 struct InAppMessageData: Codable {
@@ -48,6 +51,7 @@ struct InAppMessageData: Codable {
     let displayCondition: DisplayCondition
     let displayTiming: DisplayTiming
     let publicId: String?
+    let inlineTarget: InlineTarget?
 
     var isRealTime: Bool {
         return publicId != nil
@@ -61,6 +65,8 @@ struct InAppMessageData: Codable {
         case displayCondition = "displayCondition"
         case displayTiming = "displayTiming"
         case publicId = "publicId"
+        case inlineTarget = "inlineTarget"
+
     }
 }
 
@@ -114,3 +120,13 @@ extension Array where Element == InAppMessage {
 }
 
 // -1 .orderedAscending
+
+
+struct InAppRemovalId: Codable {
+    let id: String
+    
+    enum CodingKeys: String, CodingKey {
+        case id = "smsg_id"
+    }
+}
+

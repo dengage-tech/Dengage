@@ -1,7 +1,7 @@
 import Foundation
 
-final class DengageNetworking {
-
+final public class DengageNetworking {
+    
     let config: DengageConfiguration
     let session: URLSession
     
@@ -11,20 +11,20 @@ final class DengageNetworking {
         self.config  = config
         self.session = session
     }
-
-    func send<T: APIRequest>(request: T, completion: @escaping (Result<T.Response, Error>) -> Void) {
+    
+    public func send<T: APIRequest>(request: T, completion: @escaping (Result<T.Response, Error>) -> Void) {
         let decoder = JSONDecoder()
-        let baseURL = createBaseURL(for: request.enpointType)
+        let baseURL = createBaseURL(for: request.endpointType)
         var apiRequest = request.asURLRequest(with: baseURL)
         apiRequest.setValue(config.userAgent, forHTTPHeaderField: "User-Agent")
         
-        Logger.log(message: "API REQUEST Headers", argument: "\(apiRequest.allHTTPHeaderFields)")
-
-        Logger.log(message: "API REQUEST URL", argument: "\(apiRequest)")
-
         
         if let body = apiRequest.httpBody {
-            Logger.log(message: "HTTP REQUEST BODY:\n", argument: body.pretty)
+            Logger.log(message: "HTTP REQUEST BODY:\n for API \(apiRequest.url)", argument: body.pretty)
+        }else
+        {
+            Logger.log(message: "HTTP REQUEST BODY:\n for API \(apiRequest.url)", argument: "")
+
         }
         
         let dataTask = session.dataTask(with: apiRequest) { data, response, _ in
@@ -32,7 +32,7 @@ final class DengageNetworking {
                 completion(.failure(ServiceError.noHttpResponse))
                 return
             }
-
+            
             if let data = data  {
                 
                 Logger.log(message: "HTTP API RESPONSE:\n for API \(apiRequest.url)", argument: data.pretty)
@@ -56,12 +56,12 @@ final class DengageNetworking {
                     {
                         Logger.log(message: "HTTP API STATUS CODE:\n", argument: httpResponse.statusCode.description)
                         completion(.failure(ServiceError.noData))
-
+                        
                     }
                     else
                     {
                         completion(.failure(ServiceError.decoding(decodingError)))
-
+                        
                     }
                 }
             default:
@@ -75,17 +75,21 @@ final class DengageNetworking {
     }
     
     func createBaseURL(for endpointType:EndpointType) -> URL{
+        
         switch endpointType {
         case .event:
             return config.eventURL
         case .push:
             return config.subscriptionURL
+        case .geofence:
+            return config.geofenceURL
         case .deviceId:
             return config.dengageDeviceIdApiUrl
         case .inapp:
             return config.inAppURL
         case .inappRealTime:
             return config.inAppRealTimeURL
+            
         }
     }
 }
