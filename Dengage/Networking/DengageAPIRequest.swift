@@ -5,23 +5,23 @@ fileprivate let defaultHeaders: [String: String] = [
     "Accept": "application/json",
 ]
 
-typealias APIResponse = Decodable
+public typealias APIResponse = Decodable
 
-struct EmptyResponse: Decodable { }
+public struct EmptyResponse: Decodable { }
 
-enum HTTPMethod: String {
+public enum HTTPMethod: String {
     case get = "GET"
     case post = "POST"
     case delete = "DELETE"
     case put = "PUT"
 }
 
-enum EndpointType{
-    case event, push , deviceId, inapp , inappRealTime
+public enum EndpointType{
+    case event, push ,geofence , deviceId , inapp , inappRealTime
 }
 
-protocol APIRequest {
-    var enpointType: EndpointType{ get }
+public protocol APIRequest {
+    var endpointType: EndpointType{ get }
     var path: String { get }
     var httpBody: Data? { get }
     var queryParameters: [URLQueryItem] { get }
@@ -35,7 +35,7 @@ extension APIRequest{
         return nil
     }
     
-    var headers: [String: String]?{
+    public var headers: [String: String]?{
         return nil
     }
 }

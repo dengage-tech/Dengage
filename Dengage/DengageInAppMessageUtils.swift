@@ -17,97 +17,112 @@ final class DengageInAppMessageUtils{
     /**
      * Find prior in app message to show with respect to priority and expireDate parameters
      */
-    class func findPriorInAppMessage(inAppMessages: [InAppMessage],
-                                     screenName: String? = nil,
-                                     params: [String:String]? = nil,
-                                     config: DengageConfiguration , propertyId : String?) -> InAppMessage? {
+    class func findPriorInAppMessage(
+        inAppMessages: [InAppMessage],
+        screenName: String? = nil,
+        params: [String:String]? = nil,
+        config: DengageConfiguration,
+        propertyId: String?,
+        storyPropertyId: String?
+    ) -> InAppMessage? {
         
-        if let screenName = screenName, !screenName.isEmpty  {
-            
-            let inAppMessageWithScreenName = inAppMessages.sorted.first { message -> Bool in
-                
-                if let arrScreenFilter = message.data.displayCondition.screenNameFilters
-                {
-                    if message.isDisplayTimeAvailable() && operateRealTimeValues(message: message, with: params,config: config) && isInLineInApp(inAppMessage: message, propertyID: propertyId)
-                    {
-                        let operatorFilter = message.data.displayCondition.screenNameFilterLogicOperator
-                        
-                        var arrDisplay = [Bool]()
-                        
-                        for nameFilter in arrScreenFilter
-                        {
-                            arrDisplay.append(operateScreenValues(value: nameFilter.value, for: screenName, operatorType: nameFilter.operatorType))
-                        }
-                        
-                        switch operatorFilter {
-                            
-                        case .AND:
-                            
-                            let isDisplay = arrDisplay.filter{($0 == false)}
-                            
-                            if isDisplay.count == 0
-                            {
-                                return true
-                            }
-                            
-                        case .OR:
-                            
-                            let isDisplay = arrDisplay.filter{($0 == true)}
-                            
-                            if isDisplay.count != 0
-                            {
-                                return true
-                            }
-                            
-                        case .none:
-                            
-                            return message.data.displayCondition.screenNameFilters?.first{ nameFilter -> Bool in
-                                
-                                return operateScreenValues(value: nameFilter.value, for: screenName, operatorType: nameFilter.operatorType)
-                                
-                            } != nil && message.isDisplayTimeAvailable() && operateRealTimeValues(message: message,config: config) && isInLineInApp(inAppMessage: message, propertyID: propertyId)
-                        }
-                    }
-                    
+        let sortedMessages = inAppMessages.sorted
+        
+        if let screenName = screenName, !screenName.isEmpty {
+            if let matchedMessage = sortedMessages.first(where: { message in
+                guard let screenFilters = message.data.displayCondition.screenNameFilters else {
+                    return false
                 }
                 
-                return false
-                
+                return message.isDisplayTimeAvailable()
+                && operateRealTimeValues(message: message, with: params, config: config)
+                && isInLineInApp(inAppMessage: message, propertyID: propertyId, storyPropertyId: storyPropertyId)
+                && isScreenNameMatching(screenFilters: screenFilters,
+                                        screenName: screenName,
+                                        logicOperator: message.data.displayCondition.screenNameFilterLogicOperator)
+            }) {
+                return matchedMessage
             }
             
-            return inAppMessageWithScreenName
-            
-        }else {
-            
-            let inAppMessageWithoutScreenName = inAppMessages.sorted.first { message -> Bool in
-                return (message.data.displayCondition.screenNameFilters ?? []).isEmpty && message.isDisplayTimeAvailable() && operateRealTimeValues(message: message, with: params, config: config) && isInLineInApp(inAppMessage: message, propertyID: propertyId)
-
+            return sortedMessages.first { message in
+                (message.data.displayCondition.screenNameFilters ?? []).isEmpty
+                && message.isDisplayTimeAvailable()
+                && operateRealTimeValues(message: message, with: params, config: config)
+                && isInLineInApp(inAppMessage: message, propertyID: propertyId, storyPropertyId: storyPropertyId)
             }
-            return inAppMessageWithoutScreenName
+        } else {
+            return sortedMessages.first { message in
+                (message.data.displayCondition.screenNameFilters ?? []).isEmpty
+                && message.isDisplayTimeAvailable()
+                && operateRealTimeValues(message: message, with: params, config: config)
+                && isInLineInApp(inAppMessage: message, propertyID: propertyId, storyPropertyId: storyPropertyId)
+            }
         }
     }
     
-    private class func isInLineInApp(inAppMessage:InAppMessage , propertyID : String?) -> Bool
-    {
+    private class func isScreenNameMatching(
+        screenFilters: [ScreenNameFilter],
+        screenName: String,
+        logicOperator: RulesOperatorType?
+    ) -> Bool {
+        let results = screenFilters.map { filter in
+            operateScreenValues(value: filter.value,
+                                for: screenName,
+                                operatorType: filter.operatorType)
+        }
+        
+        switch logicOperator {
+        case .AND:
+            return !results.contains(false)
+        case .OR:
+            return results.contains(true)
+        case .none:
+            return results.contains(true)
+        }
+    }
+
+
+
     
-        if (propertyID == nil || propertyID == "" ) && (inAppMessage.data.inlineTarget?.iosSelector == "" || inAppMessage.data.inlineTarget?.iosSelector == nil)
-        {
-            return true
+    private class func isInLineInApp(inAppMessage:InAppMessage, propertyID : String?, storyPropertyId : String? = nil) -> Bool
+    {
+        if("STORY".caseInsensitiveCompare(inAppMessage.data.content.type ?? "")) == .orderedSame {
+            let isPropertyEmpty = storyPropertyId == nil || storyPropertyId == ""
+            let isSelectorEmpty = inAppMessage.data.inlineTarget?.iosSelector == "" || inAppMessage.data.inlineTarget?.iosSelector == nil
+            if isPropertyEmpty || isSelectorEmpty {
+                return false
+            } else {
+                return inAppMessage.data.inlineTarget?.iosSelector == storyPropertyId
+            }
+        } else if("INLINE".caseInsensitiveCompare(inAppMessage.data.content.type ?? "")) == .orderedSame {
+            let isPropertyEmpty = propertyID == nil || propertyID == ""
+            let isSelectorEmpty = inAppMessage.data.inlineTarget?.iosSelector == "" || inAppMessage.data.inlineTarget?.iosSelector == nil
+            if isPropertyEmpty || isSelectorEmpty {
+                return false
+            } else {
+                return inAppMessage.data.inlineTarget?.iosSelector == propertyID
+            }
+        } else if (storyPropertyId == nil || storyPropertyId == "") {
+            //TODO: EGEMEN: what is the purpose of this if?
+            if (propertyID == nil || propertyID == "" ) && (inAppMessage.data.inlineTarget?.iosSelector == "" || inAppMessage.data.inlineTarget?.iosSelector == nil)
+            {
+                return true
+            }
+            if (propertyID != nil || propertyID != "" ) && (inAppMessage.data.inlineTarget?.iosSelector == "" || inAppMessage.data.inlineTarget?.iosSelector == nil )
+            {
+                return false
+            }
+            else if (propertyID != nil || propertyID != "" ) && (inAppMessage.data.inlineTarget?.iosSelector != "" || inAppMessage.data.inlineTarget?.iosSelector != nil )
+            {
+                return inAppMessage.data.inlineTarget?.iosSelector == propertyID
+            }
+            //TODO: EGEMEN: what is the purpose of this else? Shouldn't this else return false in the following case
+            else
+            {
+                return (propertyID == nil || propertyID == "" )
+            }
         }
-        else if (propertyID != nil || propertyID != "" ) && (inAppMessage.data.inlineTarget?.iosSelector == "" || inAppMessage.data.inlineTarget?.iosSelector == nil )
-        {
-            return false
-        }
-        else if (propertyID != nil || propertyID != "" ) && (inAppMessage.data.inlineTarget?.iosSelector != "" || inAppMessage.data.inlineTarget?.iosSelector != nil )
-        {
-            return inAppMessage.data.inlineTarget?.iosSelector == propertyID
-        }
-        
-        else
-        {
-            return (propertyID == nil || propertyID == "" )
-        }
-        
+        return false
     }
     
     private class func operateScreenValues(value screenNameFilterValues: [String],
@@ -194,28 +209,42 @@ final class DengageInAppMessageUtils{
             {
                 let userParam = checkVisitorInfoAttr(parameter: criterion.parameter)
                 
-                if criterion.parameter == "dn.master_contact.birth_date"
-                {
+                if criterion.parameter == "dn.master_contact.birth_date" {
+                    let daysValue = Int(criterion.values.first ?? "") ?? 0
+                    
                     let dateFormatter = DateFormatter()
                     dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
-                    guard let formatedStartDate = dateFormatter.date(from: userParam) else { return false }
+                    guard let birthDate = dateFormatter.date(from: userParam) else { return false }
                     
-                    let diffInDays = self.daysUntil(birthday: formatedStartDate)
+                    let today = Date()
+                    let calendar = Calendar.current
                     
-                    let diffInDaysStr = "\(diffInDays)"
+                    let birthComponents = calendar.dateComponents([.month, .day], from: birthDate)
+                    guard let thisYearBirthday = calendar.date(from: DateComponents(
+                        year: calendar.component(.year, from: today),
+                        month: birthComponents.month,
+                        day: birthComponents.day
+                    )) else { return false }
                     
-                    if diffInDaysStr == criterion.values.first
-                    {
-                        return true
+                    switch daysValue {
+                    case let x where x < 0:
+                        let window = -x
+                        let lastBirthday = thisYearBirthday > today
+                        ? calendar.date(byAdding: .year, value: -1, to: thisYearBirthday)!
+                        : thisYearBirthday
+                        let daysSince = calendar.dateComponents([.day], from: lastBirthday, to: today).day ?? Int.max
+                        return (0...window).contains(daysSince)
+                    case 0:
+                        return calendar.isDate(today, inSameDayAs: thisYearBirthday)
+                    default:
+                        let window = daysValue
+                        let nextBirthday = thisYearBirthday < today
+                        ? calendar.date(byAdding: .year, value: 1, to: thisYearBirthday)!
+                        : thisYearBirthday
+                        let daysUntil = calendar.dateComponents([.day], from: today, to: nextBirthday).day ?? Int.max
+                        return (0...window).contains(daysUntil)
                     }
-                    else
-                    {
-                        return false
-                    }
-                    
-                }
-                else if criterion.dataType == .DATETIME
-                {
+                } else if criterion.dataType == .DATETIME {
                     let dateFormatter = DateFormatter()
                     dateFormatter.dateFormat = "yyyy-MM-dd HH:mm:ss"
                     guard let visitorInfoDate = dateFormatter.date(from: userParam) else { return false }
@@ -358,17 +387,17 @@ final class DengageInAppMessageUtils{
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
                            ruleParam: criterion.values,
-                           userParam: config.deviceLanguage, message: message, valueSource: criterion.valueSource)
+                           userParam: config.getLanguage(), message: message, valueSource: criterion.valueSource)
         case .SCREEN_WIDTH:
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
                            ruleParam: criterion.values,
-                           userParam: UIScreen.main.bounds.width.description, message: message, valueSource: criterion.valueSource)
+                           userParam: UIScreen.main.nativeBounds.width.description, message: message, valueSource: criterion.valueSource)
         case .SCREEN_HEIGHT:
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
                            ruleParam: criterion.values,
-                           userParam: UIScreen.main.bounds.height.description, message: message, valueSource: criterion.valueSource)
+                           userParam: UIScreen.main.nativeBounds.height.description, message: message, valueSource: criterion.valueSource)
         case .OS_VERSION:
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
@@ -390,16 +419,19 @@ final class DengageInAppMessageUtils{
                            ruleParam: criterion.values,
                            userParam: config.deviceCountryCode, message: message, valueSource: criterion.valueSource)
         case .MONTH:
+            
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
                            ruleParam: criterion.values,
-                           userParam: Date().month, message: message, valueSource: criterion.valueSource)
+                           userParam: Date().threeLetterMonth, message: message, valueSource: criterion.valueSource)
         case .WEEK_DAY:
+            
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
                            ruleParam: criterion.values,
-                           userParam: Date().weekDay, message: message, valueSource: criterion.valueSource)
+                           userParam: Date().threeLetterWeekDay , message: message, valueSource: criterion.valueSource)
         case .HOUR:
+
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
                            ruleParam: criterion.values,
@@ -415,20 +447,29 @@ final class DengageInAppMessageUtils{
                            ruleParam: criterion.values,
                            userParam: (config.contactKey.type == "c").description, message: message, valueSource: criterion.valueSource)
         case .VISIT_DURATION:
-            guard
-                let lastSessionStartTime = DengageLocalStorage.shared.value(for: .lastSessionStartTime) as? Double else {return true}
-            let lastSessionDuration = (Date().timeIntervalSince1970 - lastSessionStartTime)
+            guard let lastSessionStartTime = DengageLocalStorage.shared.value(for: .lastSessionStartTime) as? Double else {
+                return true
+            }
+
+            let lastSessionDurationInMinutes = Int((Date().timeIntervalSince1970 - lastSessionStartTime) / 60)
+            
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
                            ruleParam: criterion.values,
-                           userParam: String(lastSessionDuration), message: message, valueSource: criterion.valueSource)
+                           userParam: String(lastSessionDurationInMinutes), message: message, valueSource: criterion.valueSource)
         case .FIRST_VISIT:
             guard
                 let firstVisitTime = DengageLocalStorage.shared.value(for: .firstLaunchTime) as? Double else {return true}
+            
+            var firstVisit = "false"
+            if (Date().timeIntervalSince1970 - firstVisitTime) < 3600 {
+                firstVisit = "true"
+            }
+            
             return operate(with: criterion.comparison,
                            for: criterion.dataType,
                            ruleParam: criterion.values,
-                           userParam: String(firstVisitTime), message: message, valueSource: criterion.valueSource)
+                           userParam: firstVisit, message: message, valueSource: criterion.valueSource)
         case .LAST_VISIT:
             guard
                 let lastVisitTime = DengageLocalStorage.shared.value(for: .lastVisitTime) as? Double else {return true}
@@ -684,4 +725,5 @@ struct VisitCountData: Codable {
     let count: Int
     let timeAmount: Int
 }
+
 

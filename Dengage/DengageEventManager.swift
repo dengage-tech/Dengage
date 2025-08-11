@@ -316,3 +316,4 @@ enum DengageInternalEventType: String {
     case viewCart = "view_cart"
     case beginCheckout = "begin_checkout"
 }
+
