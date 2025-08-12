@@ -1,28 +1,28 @@
 {
-  "tvOS" : [
-
+  "iOS" : [
+    {
+      "identifier" : "ios-arm64",
+      "name" : "Dengage",
+      "container" : "Dengage.xcframework",
+      "hash" : "18d2158b28585cc88e25e866a1ad38cf435550667d97db8237fa4d895d7665a5",
+      "swiftToolchainVersion" : "6.0.2 (swiftlang-6.0.2.1.2 clang-1600.0.26.4)"
+    },
+    {
+      "identifier" : "ios-arm64_x86_64-simulator",
+      "name" : "Dengage",
+      "container" : "Dengage.xcframework",
+      "hash" : "6d5714bde7caadeb42a640be0c8f5a2238459fb5c6aa8f960c6632941ce07c7f",
+      "swiftToolchainVersion" : "6.0.2 (swiftlang-6.0.2.1.2 clang-1600.0.26.4)"
+    }
   ],
   "Mac" : [
 
   ],
-  "commitish" : "e5c368e7ff4c5a2c60957525a185ad0965b71273",
-  "iOS" : [
-    {
-      "identifier" : "ios-arm64",
-      "hash" : "18d2158b28585cc88e25e866a1ad38cf435550667d97db8237fa4d895d7665a5",
-      "swiftToolchainVersion" : "6.0.2 (swiftlang-6.0.2.1.2 clang-1600.0.26.4)",
-      "name" : "Dengage",
-      "container" : "Dengage.xcframework"
-    },
-    {
-      "identifier" : "ios-arm64_x86_64-simulator",
-      "hash" : "6d5714bde7caadeb42a640be0c8f5a2238459fb5c6aa8f960c6632941ce07c7f",
-      "swiftToolchainVersion" : "6.0.2 (swiftlang-6.0.2.1.2 clang-1600.0.26.4)",
-      "name" : "Dengage",
-      "container" : "Dengage.xcframework"
-    }
-  ],
+  "commitish" : "157e5081c0153b4daa8436b6dd49796b28d9aa16",
   "watchOS" : [
+
+  ],
+  "tvOS" : [
 
   ]
 }
