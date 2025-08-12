@@ -17,15 +17,15 @@ import Foundation
     public init(
         denEventApiUrl: String,
         denPushApiUrl: String,
-        denInAppApiUrl: String,
+        denInAppApiUrl: String? = nil,
         denGeofenceApiUrl: String? = nil,
-        fetchRealTimeInAppApiUrl: String
+        fetchRealTimeInAppApiUrl: String? = nil
     ) {
         self.denEventApiUrl = denEventApiUrl
         self.denPushApiUrl = denPushApiUrl
-        self.denInAppApiUrl = denInAppApiUrl
+        self.denInAppApiUrl = denInAppApiUrl ?? ""
         self.denGeofenceApiUrl = denGeofenceApiUrl ?? ""
-        self.fetchRealTimeInAppApiUrl = fetchRealTimeInAppApiUrl
+        self.fetchRealTimeInAppApiUrl = fetchRealTimeInAppApiUrl ?? ""
     }
 }
 

@@ -340,7 +340,7 @@ final public class DengageConfiguration: Encodable {
         if let apiUrlString = DengageLocalStorage.shared.getApiUrlConfiguration()?.denInAppApiUrl,
            !apiUrlString.isEmpty {
             guard let apiUrl = URL(string: apiUrlString) else {
-                fatalError("[DENGAGE] 'DengageInAppApiUrl' not correct in ApiUrlConfiguration")
+                return getSubscriptionUrl()
             }
             return apiUrl
         }
@@ -361,7 +361,7 @@ final public class DengageConfiguration: Encodable {
         if let apiUrlString = DengageLocalStorage.shared.getApiUrlConfiguration()?.fetchRealTimeInAppApiUrl,
            !apiUrlString.isEmpty {
             guard let apiUrl = URL(string: apiUrlString) else {
-                fatalError("[DENGAGE] 'fetchRealTimeInAppApiUrl' not correct in ApiUrlConfiguration")
+                return getSubscriptionUrl()
             }
             return apiUrl
         }
